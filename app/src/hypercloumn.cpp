@@ -120,7 +120,7 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
         }
 
         // 脈衝觸發判定
-        uint64_t threshold_mask = 1ULL << (4 + A[i]);
+        uint64_t threshold_mask = 1ULL << (6 + A[i]);
 
         if ((V[i] & ~(threshold_mask - 1)) != 0) {
             // 發射 Spike
