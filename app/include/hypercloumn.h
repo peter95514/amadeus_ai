@@ -30,8 +30,8 @@ private:
     uint64_t potential_I_mask[MASKS_SIZE] = {0};
     std::mt19937 rng;
 
-    int potential_E_rate = 10;
-    int potential_I_rate = 8;
+    int potential_E_rate = 5;
+    int potential_I_rate = 3;
 
 public:
     CorticalColumn();
