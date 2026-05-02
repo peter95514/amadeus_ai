@@ -6,15 +6,6 @@
 #include <iostream>
 #include <vector>
 
-// 針對不同編譯器的 Popcount 硬體指令優化
-#ifdef _MSC_VER
-#include <intrin.h>  // MSVC
-#define POPCOUNT64(x) __popcnt64(x)
-#else
-// GCC / Clang
-#define POPCOUNT64(x) __builtin_popcountll(x)
-#endif
-
 CorticalColumn::CorticalColumn() {
     // C++ 原生陣列初始化，將膜電位底線設為 1 (最低位階)
     std::random_device rd;
@@ -125,7 +116,7 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
         } else if (net_shift < 0) {
             V[i] = 1ULL;
         } else {
-            V[i] = (V[i] >> 1) | 1ULL;  // Leak
+            V[i] = (V[i] >> 4) | 1ULL;  // Leak
         }
 
         // 脈衝觸發判定
@@ -170,7 +161,7 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
                 }
             }
         } else {
-            if ((global_tick_counter & 7) == 0) {
+            if ((global_tick_counter & 31) == 0) {
                 A[i]--;
             }
         }

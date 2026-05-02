@@ -1,5 +1,6 @@
 #include <math.h>
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 
@@ -34,14 +35,103 @@ void amadeus_vision_tick(const Pixel* raw_screen_buffer, int screen_width) {
     // 可以將它傳遞給 V2，或是與其他神經柱的輸出進行 Router 組合
 }
 
-int main() {
-    std::ofstream log_file("amadeus_output.bin", std::ios::binary);
-    if (!log_file) {
-        std::cerr << "無法建立存檔檔案！\n";
-        return 0;
+// 隨機翻轉 Packet256 中的幾個 bit 來模擬雜訊
+Packet256 generate_noisy_packet(const Packet256& original, int num_noise_bits, std::mt19937& rng) {
+    Packet256 noisy = original;
+    std::uniform_int_distribution<int> block_dist(0, 3);
+    std::uniform_int_distribution<int> bit_dist(0, 63);
+
+    for (int i = 0; i < num_noise_bits; i++) {
+        int block_idx = block_dist(rng);
+        int bit_idx = bit_dist(rng);
+        // 使用 XOR (^) 來翻轉特定的 bit
+        noisy.blocks[block_idx] ^= (1ULL << bit_idx);
+    }
+    return noisy;
+}
+
+void run_for_no_learning() {
+    const int NUM_TRIALS = 1000;  // 跑 1000 次
+    const int NUM_TICKS = 1024;   // 每次觀察 100 個時間步長
+    const int NOISE_BITS = 2;     // 設定 A' 只有 2 個 bit 的雜訊微小差異
+
+    // 用一個 vector 來儲存每個 tick 的「距離總和」
+    // 大小為 100，初始值全部填 0
+    std::vector<long long> dist_A_Aprime_sum(NUM_TICKS, 0);
+    std::vector<long long> dist_A_B_sum(NUM_TICKS, 0);
+
+    std::random_device rd;
+    std::mt19937 rng(rd());
+
+    std::cout << "開始執行 " << NUM_TRIALS << " 次實驗取平均...\n";
+
+    for (int trial = 0; trial < NUM_TRIALS; trial++) {
+        // 1. 產生一個全新的皮層柱 (包含隨機初始化的連線與遮罩)
+        CorticalColumn col_A;
+
+        // 2. 複製出一個一模一樣的雙胞胎 (權重、初始狀態完全相同)
+        CorticalColumn col_B = col_A;
+        CorticalColumn col_A_prime = col_A;
+
+        // 3. 準備你的正交輸入 (這裡以假代碼表示，請換成你的 Packet256)
+        Packet256 pattern_A; /* 設定為左刺激 */
+        Packet256 pattern_B; /* 設定為右刺激 */
+
+        pattern_A.blocks[0] = ~0ULL;
+        pattern_A.blocks[1] = ~0ULL;
+        pattern_B.blocks[2] = ~0ULL;
+        pattern_B.blocks[3] = ~0ULL;
+        Packet256 pattern_A_prime = pattern_A;
+
+        // 4. 讓這對雙胞胎在時間軸上平行推進
+        for (int tick = 0; tick < NUM_TICKS; tick++) {
+            // 雙胞胎分別接收不同的刺激 (記得關閉學習模式)
+            Packet256 out_A = col_A.tick(pattern_A, false);
+            Packet256 out_A_prime = col_A_prime.tick(pattern_A_prime, false);
+            Packet256 out_B = col_B.tick(pattern_B, false);
+
+            int dist_AAp = 0;
+            int dist_AB = 0;
+            for (int b = 0; b < 4; b++) {
+                dist_AAp += POPCOUNT64(out_A.blocks[b] ^ out_A_prime.blocks[b]);
+                dist_AB += POPCOUNT64(out_A.blocks[b] ^ out_B.blocks[b]);
+            }
+
+            // 累加距離
+            dist_A_Aprime_sum[tick] += dist_AAp;
+            dist_A_B_sum[tick] += dist_AB;
+        }
+
+        // 印出進度條，以免畫面卡住以為當機
+        std::cout << "已完成 " << (trial + 1) << " 次實驗...\n";
     }
 
-    Packet256 red_top_left_input = {0, 0, 0, 0};
+    // ---------------------------------------------------------
+    // 實驗跑完，計算平均並寫入 CSV
+    // ---------------------------------------------------------
+    std::string target_folder = "../save";
+    std::string file_path = target_folder + "/average_distance_log.csv";
+
+    if (!std::filesystem::exists(target_folder)) {
+        std::filesystem::create_directory(target_folder);
+    }
+
+    std::ofstream outfile(file_path);
+    if (!outfile.is_open()) {
+        std::cerr << "無法開啟檔案寫入！路徑：" << file_path << "\n";
+        return;
+    }
+
+    outfile << "Tick,Dist_SameFeature_WithNoise,Dist_DifferentFeature\n";
+    for (int tick = 0; tick < NUM_TICKS; tick++) {
+        double avg_AAp = static_cast<double>(dist_A_Aprime_sum[tick]) / NUM_TRIALS;
+        double avg_AB = static_cast<double>(dist_A_B_sum[tick]) / NUM_TRIALS;
+        outfile << tick << "," << avg_AAp << "," << avg_AB << "\n";
+    }
+    outfile.close();
+    std::cout << "1000次平均數據已成功儲存至 " << file_path << "\n";
+
+    /*Packet256 red_top_left_input = {0, 0, 0, 0};
     Packet256 green_top_left_input = {0, 0, 0, 0};
     Packet256 null_top_left_input = {0, 0, 0, 0};
     Packet256 blue = {0, 0, 0, 0};
@@ -68,7 +158,7 @@ int main() {
         }
     }
 
-    /*for (; global_tick_counter < n; global_tick_counter++) {
+    for (; global_tick_counter < n; global_tick_counter++) {
         std::cout << "time " << global_tick_counter << std::endl;
         Packet256 output_packet = v1_column.tick(red_top_left_input);
         log_file.write(reinterpret_cast<const char*>(&output_packet), sizeof(Packet256));
@@ -88,7 +178,8 @@ int main() {
         Packet256 output_packet = v1_column.tick(blue);
         log_file.write(reinterpret_cast<const char*>(&output_packet), sizeof(Packet256));
     }*/
+}
 
-    log_file.close();
-    std::cout << "資料紀錄完畢，已存為 amadeus_output.bin\n";
+int main() {
+    run_for_no_learning();
 };

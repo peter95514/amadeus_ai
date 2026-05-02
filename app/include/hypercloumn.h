@@ -2,6 +2,14 @@
 
 #include "name.h"
 
+#ifdef _MSC_VER
+#include <intrin.h>  // MSVC
+#define POPCOUNT64(x) __popcnt64(x)
+#else
+// GCC / Clang
+#define POPCOUNT64(x) __builtin_popcountll(x)
+#endif
+
 class CorticalColumn {
 private:
     // === 動態狀態緩衝區 (16 * 64 = 1024 bits) ===
@@ -22,8 +30,8 @@ private:
     uint64_t potential_I_mask[MASKS_SIZE] = {0};
     std::mt19937 rng;
 
-    int potential_E_rate = 30;
-    int potential_I_rate = 25;
+    int potential_E_rate = 10;
+    int potential_I_rate = 8;
 
 public:
     CorticalColumn();

@@ -86,8 +86,14 @@ CMakeFiles/Amadeus.dir/src/managercolumn.cpp.o: \
  /usr/include/c++/11/tr1/modified_bessel_func.tcc \
  /usr/include/c++/11/tr1/poly_hermite.tcc \
  /usr/include/c++/11/tr1/poly_laguerre.tcc \
- /usr/include/c++/11/tr1/riemann_zeta.tcc /usr/include/c++/11/fstream \
- /usr/include/c++/11/istream /usr/include/c++/11/ios \
+ /usr/include/c++/11/tr1/riemann_zeta.tcc /usr/include/c++/11/filesystem \
+ /usr/include/c++/11/bits/fs_fwd.h /usr/include/c++/11/system_error \
+ /usr/include/x86_64-linux-gnu/c++/11/bits/error_constants.h \
+ /usr/include/c++/11/cerrno /usr/include/errno.h \
+ /usr/include/x86_64-linux-gnu/bits/errno.h /usr/include/linux/errno.h \
+ /usr/include/x86_64-linux-gnu/asm/errno.h \
+ /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
+ /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
  /usr/include/c++/11/iosfwd /usr/include/c++/11/bits/stringfwd.h \
  /usr/include/c++/11/bits/memoryfwd.h /usr/include/c++/11/bits/postypes.h \
  /usr/include/c++/11/cwchar /usr/include/wchar.h \
@@ -99,19 +105,30 @@ CMakeFiles/Amadeus.dir/src/managercolumn.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
  /usr/include/x86_64-linux-gnu/bits/wchar2.h \
- /usr/include/c++/11/exception /usr/include/c++/11/bits/exception.h \
+ /usr/include/c++/11/stdexcept /usr/include/c++/11/exception \
+ /usr/include/c++/11/bits/exception.h \
  /usr/include/c++/11/bits/exception_ptr.h \
  /usr/include/c++/11/bits/cxxabi_init_exception.h \
  /usr/include/c++/11/typeinfo /usr/include/c++/11/bits/hash_bytes.h \
  /usr/include/c++/11/new /usr/include/c++/11/bits/nested_exception.h \
- /usr/include/c++/11/bits/char_traits.h /usr/include/c++/11/cstdint \
+ /usr/include/c++/11/string /usr/include/c++/11/bits/char_traits.h \
+ /usr/include/c++/11/cstdint \
  /usr/lib/gcc/x86_64-linux-gnu/11/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
+ /usr/include/c++/11/bits/allocator.h \
+ /usr/include/x86_64-linux-gnu/c++/11/bits/c++allocator.h \
+ /usr/include/c++/11/ext/new_allocator.h \
  /usr/include/c++/11/bits/localefwd.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/c++locale.h \
  /usr/include/c++/11/clocale /usr/include/locale.h \
  /usr/include/x86_64-linux-gnu/bits/locale.h /usr/include/c++/11/cctype \
- /usr/include/ctype.h /usr/include/c++/11/bits/ios_base.h \
+ /usr/include/ctype.h /usr/include/c++/11/bits/ostream_insert.h \
+ /usr/include/c++/11/bits/cxxabi_forced.h \
+ /usr/include/c++/11/bits/stl_function.h \
+ /usr/include/c++/11/backward/binders.h \
+ /usr/include/c++/11/bits/range_access.h \
+ /usr/include/c++/11/initializer_list \
+ /usr/include/c++/11/bits/basic_string.h \
  /usr/include/c++/11/ext/atomicity.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/gthr.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h \
@@ -128,17 +145,6 @@ CMakeFiles/Amadeus.dir/src/managercolumn.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/pthread_stack_min-dynamic.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/atomic_word.h \
  /usr/include/x86_64-linux-gnu/sys/single_threaded.h \
- /usr/include/c++/11/bits/locale_classes.h /usr/include/c++/11/string \
- /usr/include/c++/11/bits/allocator.h \
- /usr/include/x86_64-linux-gnu/c++/11/bits/c++allocator.h \
- /usr/include/c++/11/ext/new_allocator.h \
- /usr/include/c++/11/bits/ostream_insert.h \
- /usr/include/c++/11/bits/cxxabi_forced.h \
- /usr/include/c++/11/bits/stl_function.h \
- /usr/include/c++/11/backward/binders.h \
- /usr/include/c++/11/bits/range_access.h \
- /usr/include/c++/11/initializer_list \
- /usr/include/c++/11/bits/basic_string.h \
  /usr/include/c++/11/ext/alloc_traits.h \
  /usr/include/c++/11/bits/alloc_traits.h \
  /usr/include/c++/11/bits/stl_construct.h /usr/include/c++/11/string_view \
@@ -152,28 +158,47 @@ CMakeFiles/Amadeus.dir/src/managercolumn.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
  /usr/include/x86_64-linux-gnu/bits/stdio.h \
- /usr/include/x86_64-linux-gnu/bits/stdio2.h /usr/include/c++/11/cerrno \
- /usr/include/errno.h /usr/include/x86_64-linux-gnu/bits/errno.h \
- /usr/include/linux/errno.h /usr/include/x86_64-linux-gnu/asm/errno.h \
- /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
- /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
+ /usr/include/x86_64-linux-gnu/bits/stdio2.h \
  /usr/include/c++/11/bits/charconv.h \
- /usr/include/c++/11/bits/basic_string.tcc \
+ /usr/include/c++/11/bits/basic_string.tcc /usr/include/c++/11/chrono \
+ /usr/include/c++/11/ratio /usr/include/c++/11/ctime \
+ /usr/include/c++/11/bits/parse_numbers.h \
+ /usr/include/c++/11/bits/fs_path.h /usr/include/c++/11/utility \
+ /usr/include/c++/11/bits/stl_relops.h /usr/include/c++/11/locale \
+ /usr/include/c++/11/bits/locale_classes.h \
  /usr/include/c++/11/bits/locale_classes.tcc \
- /usr/include/c++/11/system_error \
- /usr/include/x86_64-linux-gnu/c++/11/bits/error_constants.h \
- /usr/include/c++/11/stdexcept /usr/include/c++/11/streambuf \
- /usr/include/c++/11/bits/streambuf.tcc \
- /usr/include/c++/11/bits/basic_ios.h \
  /usr/include/c++/11/bits/locale_facets.h /usr/include/c++/11/cwctype \
  /usr/include/wctype.h /usr/include/x86_64-linux-gnu/bits/wctype-wchar.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/ctype_base.h \
+ /usr/include/c++/11/bits/ios_base.h /usr/include/c++/11/streambuf \
+ /usr/include/c++/11/bits/streambuf.tcc \
  /usr/include/c++/11/bits/streambuf_iterator.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/ctype_inline.h \
  /usr/include/c++/11/bits/locale_facets.tcc \
+ /usr/include/c++/11/bits/locale_facets_nonio.h \
+ /usr/include/x86_64-linux-gnu/c++/11/bits/time_members.h \
+ /usr/include/x86_64-linux-gnu/c++/11/bits/messages_members.h \
+ /usr/include/libintl.h /usr/include/c++/11/bits/codecvt.h \
+ /usr/include/c++/11/bits/locale_facets_nonio.tcc \
+ /usr/include/c++/11/bits/locale_conv.h \
+ /usr/include/c++/11/bits/unique_ptr.h /usr/include/c++/11/tuple \
+ /usr/include/c++/11/array /usr/include/c++/11/bits/uses_allocator.h \
+ /usr/include/c++/11/bits/invoke.h /usr/include/c++/11/iomanip \
+ /usr/include/c++/11/bits/quoted_string.h /usr/include/c++/11/sstream \
+ /usr/include/c++/11/istream /usr/include/c++/11/ios \
+ /usr/include/c++/11/bits/basic_ios.h \
  /usr/include/c++/11/bits/basic_ios.tcc /usr/include/c++/11/ostream \
  /usr/include/c++/11/bits/ostream.tcc \
- /usr/include/c++/11/bits/istream.tcc /usr/include/c++/11/bits/codecvt.h \
+ /usr/include/c++/11/bits/istream.tcc \
+ /usr/include/c++/11/bits/sstream.tcc /usr/include/c++/11/codecvt \
+ /usr/include/c++/11/ext/concurrence.h \
+ /usr/include/c++/11/bits/shared_ptr.h \
+ /usr/include/c++/11/bits/shared_ptr_base.h \
+ /usr/include/c++/11/bits/allocated_ptr.h \
+ /usr/include/c++/11/bits/refwrap.h \
+ /usr/include/c++/11/ext/aligned_buffer.h \
+ /usr/include/c++/11/bits/fs_dir.h /usr/include/c++/11/bits/fs_ops.h \
+ /usr/include/c++/11/fstream \
  /usr/include/x86_64-linux-gnu/c++/11/bits/basic_file.h \
  /usr/include/x86_64-linux-gnu/c++/11/bits/c++io.h \
  /usr/include/c++/11/bits/fstream.tcc /usr/include/c++/11/iostream \
@@ -196,8 +221,7 @@ CMakeFiles/Amadeus.dir/src/managercolumn.cpp.o: \
  /usr/include/c++/11/bits/stl_numeric.h /usr/include/c++/11/bit \
  /usr/include/c++/11/pstl/glue_numeric_defs.h \
  /usr/include/c++/11/pstl/execution_defs.h \
- /root/amadeus/app/include/name.h /usr/include/c++/11/array \
- /usr/include/c++/11/utility /usr/include/c++/11/bits/stl_relops.h \
- /usr/include/c++/11/atomic /usr/include/c++/11/bits/atomic_base.h \
+ /root/amadeus/app/include/name.h /usr/include/c++/11/atomic \
+ /usr/include/c++/11/bits/atomic_base.h \
  /usr/include/c++/11/bits/atomic_lockfree_defines.h \
  /root/amadeus/app/include/retina.h
