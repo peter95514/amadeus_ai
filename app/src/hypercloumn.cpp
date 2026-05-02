@@ -161,7 +161,7 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
                 }
             }
         } else {
-            if ((global_tick_counter & 31) == 0) {
+            if ((global_tick_counter & 64) == 0) {
                 A[i]--;
             }
         }

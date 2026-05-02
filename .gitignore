@@ -1,0 +1,24 @@
+# Virtual Environment (The most important part!)
+venv/
+env/
+.env/
+
+# Python bytecode (compiled files)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packages
+dist/
+app/build
+*.egg-info/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Local environment variables (sensitive info)
+.env
