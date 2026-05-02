@@ -8,15 +8,19 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/root/amadeus/app/src/hypercloumn.cpp" "CMakeFiles/Amadeus.dir/src/hypercloumn.cpp.o" "gcc" "CMakeFiles/Amadeus.dir/src/hypercloumn.cpp.o.d"
-  "/root/amadeus/app/src/main.cpp" "CMakeFiles/Amadeus.dir/src/main.cpp.o" "gcc" "CMakeFiles/Amadeus.dir/src/main.cpp.o.d"
-  "/root/amadeus/app/src/managercolumn.cpp" "CMakeFiles/Amadeus.dir/src/managercolumn.cpp.o" "gcc" "CMakeFiles/Amadeus.dir/src/managercolumn.cpp.o.d"
-  "/root/amadeus/app/src/name.cpp" "CMakeFiles/Amadeus.dir/src/name.cpp.o" "gcc" "CMakeFiles/Amadeus.dir/src/name.cpp.o.d"
-  "/root/amadeus/app/src/retina.cpp" "CMakeFiles/Amadeus.dir/src/retina.cpp.o" "gcc" "CMakeFiles/Amadeus.dir/src/retina.cpp.o.d"
+  "/home/peter/amadeus_ai/app/src/hypercloumn.cpp" "CMakeFiles/Amadeus.dir/src/hypercloumn.cpp.o" "gcc" "CMakeFiles/Amadeus.dir/src/hypercloumn.cpp.o.d"
+  "/home/peter/amadeus_ai/app/src/main.cpp" "CMakeFiles/Amadeus.dir/src/main.cpp.o" "gcc" "CMakeFiles/Amadeus.dir/src/main.cpp.o.d"
+  "/home/peter/amadeus_ai/app/src/managercolumn.cpp" "CMakeFiles/Amadeus.dir/src/managercolumn.cpp.o" "gcc" "CMakeFiles/Amadeus.dir/src/managercolumn.cpp.o.d"
+  "/home/peter/amadeus_ai/app/src/name.cpp" "CMakeFiles/Amadeus.dir/src/name.cpp.o" "gcc" "CMakeFiles/Amadeus.dir/src/name.cpp.o.d"
+  "/home/peter/amadeus_ai/app/src/retina.cpp" "CMakeFiles/Amadeus.dir/src/retina.cpp.o" "gcc" "CMakeFiles/Amadeus.dir/src/retina.cpp.o.d"
   )
 
-# Targets to which this target links.
-set(CMAKE_TARGET_LINKED_INFO_FILES
+# Targets to which this target links which contain Fortran sources.
+set(CMAKE_Fortran_TARGET_LINKED_INFO_FILES
+  )
+
+# Targets to which this target links which contain Fortran sources.
+set(CMAKE_Fortran_TARGET_FORWARD_LINKED_INFO_FILES
   )
 
 # Fortran module output directory.

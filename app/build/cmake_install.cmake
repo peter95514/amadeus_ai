@@ -1,4 +1,4 @@
-# Install script for directory: /root/amadeus/app
+# Install script for directory: /home/peter/amadeus_ai/app
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/root/amadeus/app/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/peter/amadeus_ai/app/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

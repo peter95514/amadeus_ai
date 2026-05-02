@@ -1,2 +1,2 @@
-CMakeFiles/Amadeus.dir/src/main.cpp.o: /root/amadeus/app/src/main.cpp \
- /usr/include/stdc-predef.h
+CMakeFiles/Amadeus.dir/src/main.cpp.o: \
+ /home/peter/amadeus_ai/app/src/main.cpp /usr/include/stdc-predef.h
