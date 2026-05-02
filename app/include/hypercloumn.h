@@ -31,7 +31,7 @@ private:
     std::mt19937 rng;
 
     int potential_E_rate = 10;
-    int potential_I_rate = 3;
+    int potential_I_rate = 8;
 
 public:
     CorticalColumn();
