@@ -52,8 +52,8 @@ Packet256 generate_noisy_packet(const Packet256& original, int num_noise_bits, s
 
 void run_for_no_learning() {
     const int NUM_TRIALS = 1000;  // 跑 1000 次
-    const int NUM_TICKS = 1024;   // 每次觀察 100 個時間步長
-    const int NOISE_BITS = 2;     // 設定 A' 只有 2 個 bit 的雜訊微小差異
+    const int NUM_TICKS = 2048;   // 每次觀察 100 個時間步長
+    const int NOISE_BITS = 1;     // 設定 A' 只有 2 個 bit 的雜訊微小差異
 
     // 用一個 vector 來儲存每個 tick 的「距離總和」
     // 大小為 100，初始值全部填 0
@@ -81,14 +81,14 @@ void run_for_no_learning() {
         pattern_A.blocks[1] = ~0ULL;
         pattern_B.blocks[2] = ~0ULL;
         pattern_B.blocks[3] = ~0ULL;
-        Packet256 pattern_A_prime = pattern_A;
+        Packet256 pattern_A_prime = generate_noisy_packet(pattern_A, NOISE_BITS, rng);
 
         // 4. 讓這對雙胞胎在時間軸上平行推進
         for (int tick = 0; tick < NUM_TICKS; tick++) {
             // 雙胞胎分別接收不同的刺激 (記得關閉學習模式)
-            Packet256 out_A = col_A.tick(pattern_A, false);
-            Packet256 out_A_prime = col_A_prime.tick(pattern_A_prime, false);
-            Packet256 out_B = col_B.tick(pattern_B, false);
+            Packet256 out_A = col_A.tick(pattern_A);
+            Packet256 out_A_prime = col_A_prime.tick(pattern_A_prime);
+            Packet256 out_B = col_B.tick(pattern_B);
 
             int dist_AAp = 0;
             int dist_AB = 0;
