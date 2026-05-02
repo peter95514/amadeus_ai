@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/Amadeus.dir/src/hypercloumn.cpp.o CMakeFiles/Amadeus.dir/src/main.cpp.o CMakeFiles/Amadeus.dir/src/managercolumn.cpp.o CMakeFiles/Amadeus.dir/src/name.cpp.o CMakeFiles/Amadeus.dir/src/retina.cpp.o -o Amadeus 

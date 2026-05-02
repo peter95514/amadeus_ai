@@ -1,0 +1,27 @@
+[
+{
+  "directory": "/root/amadeus/app/build",
+  "command": "/usr/bin/c++  -I/root/amadeus/app/include -O3 -march=native -Wall -Wextra -std=c++17 -o CMakeFiles/Amadeus.dir/src/hypercloumn.cpp.o -c /root/amadeus/app/src/hypercloumn.cpp",
+  "file": "/root/amadeus/app/src/hypercloumn.cpp"
+},
+{
+  "directory": "/root/amadeus/app/build",
+  "command": "/usr/bin/c++  -I/root/amadeus/app/include -O3 -march=native -Wall -Wextra -std=c++17 -o CMakeFiles/Amadeus.dir/src/main.cpp.o -c /root/amadeus/app/src/main.cpp",
+  "file": "/root/amadeus/app/src/main.cpp"
+},
+{
+  "directory": "/root/amadeus/app/build",
+  "command": "/usr/bin/c++  -I/root/amadeus/app/include -O3 -march=native -Wall -Wextra -std=c++17 -o CMakeFiles/Amadeus.dir/src/managercolumn.cpp.o -c /root/amadeus/app/src/managercolumn.cpp",
+  "file": "/root/amadeus/app/src/managercolumn.cpp"
+},
+{
+  "directory": "/root/amadeus/app/build",
+  "command": "/usr/bin/c++  -I/root/amadeus/app/include -O3 -march=native -Wall -Wextra -std=c++17 -o CMakeFiles/Amadeus.dir/src/name.cpp.o -c /root/amadeus/app/src/name.cpp",
+  "file": "/root/amadeus/app/src/name.cpp"
+},
+{
+  "directory": "/root/amadeus/app/build",
+  "command": "/usr/bin/c++  -I/root/amadeus/app/include -O3 -march=native -Wall -Wextra -std=c++17 -o CMakeFiles/Amadeus.dir/src/retina.cpp.o -c /root/amadeus/app/src/retina.cpp",
+  "file": "/root/amadeus/app/src/retina.cpp"
+}
+]
