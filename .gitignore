@@ -11,7 +11,7 @@ __pycache__/
 # Distribution / packages
 dist/
 app/build/
-app/compiled_commands.json
+app/compile_commands.json
 *.egg-info/
 
 # Jupyter Notebook checkpoints
