@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include "hypercloumn.h"
 #include "name.h"
@@ -50,7 +51,7 @@ Packet256 generate_noisy_packet(const Packet256& original, int num_noise_bits, s
     return noisy;
 }
 
-void run_for_no_learning() {
+void run_for_no_learning(int k = 0) {
     const int NUM_TRIALS = 1000;  // 跑 1000 次
     const int NUM_TICKS = 2048;   // 每次觀察 100 個時間步長
     const int NOISE_BITS = 1;     // 設定 A' 只有 2 個 bit 的雜訊微小差異
@@ -67,7 +68,7 @@ void run_for_no_learning() {
 
     for (int trial = 0; trial < NUM_TRIALS; trial++) {
         // 1. 產生一個全新的皮層柱 (包含隨機初始化的連線與遮罩)
-        CorticalColumn col_A;
+        CorticalColumn col_A(10, 5, k, 6, 5, 2);
 
         // 2. 複製出一個一模一樣的雙胞胎 (權重、初始狀態完全相同)
         CorticalColumn col_B = col_A;
@@ -180,6 +181,11 @@ void run_for_no_learning() {
     }*/
 }
 
-int main() {
-    run_for_no_learning();
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        std::cerr << "請提供一個數字參數！" << std::endl;
+        return 1;
+    }
+    int k = std::stoi(argv[1]);
+    run_for_no_learning(k);
 };

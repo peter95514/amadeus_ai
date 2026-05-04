@@ -6,7 +6,8 @@
 #include <iostream>
 #include <vector>
 
-CorticalColumn::CorticalColumn() {
+CorticalColumn::CorticalColumn(int potential_E_rate, int potential_I_rate, int leak_speed, int essential_A_mask,
+                               int P_of_growth, int P_of_death) {
     // C++ 原生陣列初始化，將膜電位底線設為 1 (最低位階)
     std::random_device rd;
     rng.seed(rd());
@@ -14,6 +15,14 @@ CorticalColumn::CorticalColumn() {
         V[i] = 1ULL;
         A[i] = 0;
     }
+
+    this->potential_E_rate = potential_E_rate;
+    this->potential_I_rate = potential_I_rate;
+    this->leak_speed = leak_speed;
+    this->essential_A_mask = essential_A_mask;
+    this->P_of_growth = P_of_growth;
+    this->P_of_death = P_of_death;
+
     initialize_bucket_topology();
 
     initialize_random_connections(potential_E_rate, potential_I_rate);
@@ -116,11 +125,11 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
         } else if (net_shift < 0) {
             V[i] = 1ULL;
         } else {
-            V[i] = (V[i] >> 4) | 1ULL;  // Leak
+            V[i] = (V[i] >> leak_speed) | 1ULL;  // Leak
         }
 
         // 脈衝觸發判定
-        uint64_t threshold_mask = 1ULL << (6 + A[i]);
+        uint64_t threshold_mask = 1ULL << (essential_A_mask + A[i]);
 
         if ((V[i] & ~(threshold_mask - 1)) != 0) {
             // 發射 Spike
@@ -141,7 +150,7 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
 
                     // 如果有候選者，我們給予它 5% 的極低機率長出連線 (避免突觸暴增)
                     if (candidates != 0) {
-                        uint64_t growth_mask = generate_random_mask(5);
+                        uint64_t growth_mask = generate_random_mask(P_of_growth);
                         active_E_mask[block_idx] |= (candidates & growth_mask);
                     }
                     // ----------------------------------------------------
@@ -153,7 +162,7 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
                     if (freeloaders != 0) {
                         // 1% 的機率將這條無用的突觸剪斷 (死亡)
                         // 這裡機率必須比生長(5%)低，否則網路會太快斷光光
-                        uint64_t death_mask = generate_random_mask(1);
+                        uint64_t death_mask = generate_random_mask(P_of_death);
 
                         // 將抽中死亡的 bit 挖掉 (Bitwise AND NOT)
                         active_E_mask[block_idx] &= ~(freeloaders & death_mask);

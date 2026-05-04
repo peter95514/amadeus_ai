@@ -43,7 +43,7 @@ plt.ylim(bottom=0)
 plt.tight_layout()
 
 
-save_dir = os.path.join(BASE_DIR, "./saved_plots_essential_A_bit")
+save_dir = os.path.join(BASE_DIR, "./saved_plots_test_for_leakspeed_from_1_to_15")
 base_filename = "amadeus_distance_plot"
 extension = ".png"
 

@@ -30,11 +30,17 @@ private:
     uint64_t potential_I_mask[MASKS_SIZE] = {0};
     std::mt19937 rng;
 
-    int potential_E_rate = 10;
-    int potential_I_rate = 8;
+    int potential_E_rate;
+    int potential_I_rate;
+
+    int leak_speed;
+    int essential_A_mask;
+    int P_of_growth;
+    int P_of_death;
 
 public:
-    CorticalColumn();
+    CorticalColumn(int potential_E_rate = 11, int potential_I_rate = 5, int leak_speed = 4, int essential_A_mask = 6,
+                   int P_of_growth = 5, int P_of_death = 2);
 
 private:
     // 將 16 個桶子排成 4x4 的 2D 拓撲
