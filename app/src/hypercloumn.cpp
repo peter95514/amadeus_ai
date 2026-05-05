@@ -1,5 +1,6 @@
 #include "hypercloumn.h"
 
+#include <algorithm>
 #include <cmath>    // 提供 std::abs, std::max
 #include <cstdint>  // 提供 uint64_t 等定寬整數型別
 #include <cstring>  // 提供 std::memcpy, std::memset
@@ -117,19 +118,31 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
             int block_idx = (i * NUM_BUCKETS) + b;
             excitatory_count += POPCOUNT64(spikes_current[b] & active_E_mask[block_idx]);
             inhibitory_count += POPCOUNT64(spikes_current[b] & active_I_mask[block_idx]);
-        }
+            // 1. 突觸降維 (Synaptic Downscaling)
+            // 使用位元右移 (等同於除以 4 和 2)，編譯器會優化成極速指令
+            // 這樣代表：每 4 個興奮輸入，才產生 1 階電位上升
+            // 每 2 個抑制輸入，才產生 1 階電位下降 (保留了抑制性大於興奮性的 2 倍比例，但力度溫和)
+            int net_shift = excitatory_count - inhibitory_count;
 
-        int net_shift = excitatory_count - inhibitory_count;
-        if (net_shift > 0) {
-            int current_highest_bit = 63 - __builtin_clzll(V[i]);
-            if (current_highest_bit + net_shift >= 63)
-                V[i] = 1ULL << 63;
-            else
-                V[i] = V[i] << net_shift;
-        } else if (net_shift < 0) {
-            V[i] = 1ULL;
-        } else {
-            V[i] = (V[i] >> leak_speed) | 1ULL;  // Leak
+            // 2. 位移限幅 (Shift Clamping) ★ 關鍵防護 ★
+            // 限制單次 Tick 的最大電位變動率，防止瞬間暴走或瞬間失憶
+            // 這裡將單步最大位移限制在 [-3, +3] 之間 (即單步最多放大/縮小 8 倍)
+            net_shift = std::max(-3, std::min(3, net_shift));
+
+            // 接下來接回你原本修復過的防溢位運算
+            if (net_shift > 0) {
+                int current_highest_bit = 63 - __builtin_clzll(V[i]);
+                if (current_highest_bit + net_shift >= 63)
+                    V[i] = 1ULL << 63;
+                else
+                    V[i] = V[i] << net_shift;
+            } else if (net_shift < 0) {
+                int down_shift = -net_shift;
+                // 因為前面有限幅，down_shift 最大只會是 3，絕對不會 >= 64
+                V[i] = std::max(1ULL, (unsigned long long)V[i] >> down_shift);
+            } else {
+                V[i] = (V[i] >> leak_speed) | 1ULL;  // Leak
+            }
         }
 
         // 脈衝觸發判定
@@ -139,7 +152,14 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
             // 發射 Spike
             spikes_next[i / NEURONS_PER_BUCKET] |= (1ULL << (i % NEURONS_PER_BUCKET));
             V[i] = 1ULL;
-            A[i]++;
+            int max_allowed_A = 63 - essential_A_mask;
+
+            // 如果覺得一次 +1 (門檻變2倍) 不夠，可以改為 +2 (門檻瞬間變4倍)
+            if (A[i] + 1 <= max_allowed_A) {
+                A[i]++;
+            } else {
+                A[i] = max_allowed_A;  // 頂到最高門檻，鎖死
+            }
 
             // ==========================================
             // ★ 純位元結構可塑性 (Bitwise Structural Plasticity) ★
@@ -173,8 +193,10 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
                 }
             }
         } else {
-            if ((global_tick_counter & 64) == 0) {
-                A[i]--;
+            if ((global_tick_counter & 63) == 0) {
+                if (A[i] > 0) {
+                    A[i]--;
+                }
             }
         }
     }

@@ -87,9 +87,9 @@ void run_for_no_learning(int k = 0) {
         // 4. 讓這對雙胞胎在時間軸上平行推進
         for (int tick = 0; tick < NUM_TICKS; tick++) {
             // 雙胞胎分別接收不同的刺激 (記得關閉學習模式)
-            Packet256 out_A = col_A.tick(pattern_A);
-            Packet256 out_A_prime = col_A_prime.tick(pattern_A_prime);
-            Packet256 out_B = col_B.tick(pattern_B);
+            Packet256 out_A = col_A.tick(pattern_A, 0);
+            Packet256 out_A_prime = col_A_prime.tick(pattern_A_prime, 0);
+            Packet256 out_B = col_B.tick(pattern_B, 0);
 
             int dist_AAp = 0;
             int dist_AB = 0;

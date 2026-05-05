@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <random>
 
 #include "name.h"
@@ -39,7 +40,7 @@ private:
     int P_of_death;
 
 public:
-    CorticalColumn(int potential_E_rate = 11, int potential_I_rate = 5, int leak_speed = 4, int essential_A_mask = 6,
+    CorticalColumn(int potential_E_rate = 5, int potential_I_rate = 4, int leak_speed = 4, int essential_A_mask = 20,
                    int P_of_growth = 5, int P_of_death = 2);
 
 private:
