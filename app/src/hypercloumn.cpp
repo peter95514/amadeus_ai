@@ -121,7 +121,11 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
 
         int net_shift = excitatory_count - inhibitory_count;
         if (net_shift > 0) {
-            V[i] = V[i] << net_shift;
+            int current_highest_bit = 63 - __builtin_clzll(V[i]);
+            if (current_highest_bit + net_shift >= 63)
+                V[i] = 1ULL << 63;
+            else
+                V[i] = V[i] << net_shift;
         } else if (net_shift < 0) {
             V[i] = 1ULL;
         } else {
@@ -163,7 +167,6 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
                         // 1% 的機率將這條無用的突觸剪斷 (死亡)
                         // 這裡機率必須比生長(5%)低，否則網路會太快斷光光
                         uint64_t death_mask = generate_random_mask(P_of_death);
-
                         // 將抽中死亡的 bit 挖掉 (Bitwise AND NOT)
                         active_E_mask[block_idx] &= ~(freeloaders & death_mask);
                     }
