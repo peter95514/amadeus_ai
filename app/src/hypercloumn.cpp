@@ -56,6 +56,11 @@ void CorticalColumn::initialize_bucket_topology() {
             int tx = target_bucket % 4;
             int ty = target_bucket / 4;
 
+            // ==================================
+            // 可優化區間!!!!
+            // 將dist轉化成hash_table做查表
+            // ==================================
+
             // 切比雪夫距離 (降維桶子計算)
             int dist = std::max(std::abs(my_bx - tx), std::abs(my_by - ty));
 
@@ -108,7 +113,6 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
         spikes_current[b] = input_packet.blocks[b];
     }
 
-    // 2. 隱藏層與輸出層運算 (ID 256 ~ 1023)
     for (int i = 0; i < NUM_NEURONS; i++) {
         int excitatory_count = 0;
         int inhibitory_count = 0;
@@ -126,18 +130,19 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
             // 2. 位移限幅 (Shift Clamping) ★ 關鍵防護 ★
             // 限制單次 Tick 的最大電位變動率，防止瞬間暴走或瞬間失憶
             // 這裡將單步最大位移限制在 [-3, +3] 之間 (即單步最多放大/縮小 8 倍)
-            net_shift = std::max(-3, std::min(3, net_shift));
+            net_shift = std::clamp(net_shift, -3, 3);
 
             // 接下來接回你原本修復過的防溢位運算
             if (net_shift > 0) {
-                int current_highest_bit = 63 - __builtin_clzll(V[i]);
-                if (current_highest_bit + net_shift >= 63)
-                    V[i] = 1ULL << 63;
-                else
-                    V[i] = V[i] << net_shift;
+            // ★ 優化 3：用直接比較取代 clzll，降低複雜度
+            uint64_t overflow_threshold = 1ULL << (63 - net_shift);
+            if (V[i] >= overflow_threshold) {
+                V[i] = 1ULL << 63;
+            } else {
+                V[i] <<= net_shift;
+            }
             } else if (net_shift < 0) {
                 int down_shift = -net_shift;
-                // 因為前面有限幅，down_shift 最大只會是 3，絕對不會 >= 64
                 V[i] = std::max(1ULL, (unsigned long long)V[i] >> down_shift);
             } else {
                 V[i] = (V[i] >> leak_speed) | 1ULL;  // Leak
@@ -146,18 +151,12 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
 
         // 脈衝觸發判定
         uint64_t threshold_mask = 1ULL << (essential_A_mask + A[i]);
-
-        if ((V[i] & ~(threshold_mask - 1)) != 0) {
+        if (V[i] >= threshold_mask) {
             // 發射 Spike
             spikes_next[i / NEURONS_PER_BUCKET] |= (1ULL << (i % NEURONS_PER_BUCKET));
             V[i] = 1ULL;
-            int max_allowed_A = 63 - essential_A_mask;
+            A[i] += (A[i] < max_allowed_A);
 
-            if (A[i] + 1 <= max_allowed_A) {
-                A[i]++;
-            } else {
-                A[i] = max_allowed_A;  // 頂到最高門檻，鎖死
-            }
 
             // ==========================================
             // ★ 純位元結構可塑性 (Bitwise Structural Plasticity) ★

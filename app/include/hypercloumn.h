@@ -40,6 +40,9 @@ private:
     int P_of_death;
     int T_of_leak;
 
+    int max_allowed_A = 63 - essential_A_mask;
+
+
 public:
     CorticalColumn(int potential_E_rate = 10, int potential_I_rate = 6, int leak_speed = 1, int essential_A_mask = 10,
                    int P_of_growth = 5, int P_of_death = 2, int T_of_leak = 32);
