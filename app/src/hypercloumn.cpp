@@ -145,15 +145,14 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
         }
 
         // 脈衝觸發判定
-        uint64_t threshold_mask = 1ULL << (A[i]);
+        uint64_t threshold_mask = 1ULL << (essential_A_mask + A[i]);
 
         if ((V[i] & ~(threshold_mask - 1)) != 0) {
             // 發射 Spike
             spikes_next[i / NEURONS_PER_BUCKET] |= (1ULL << (i % NEURONS_PER_BUCKET));
             V[i] = 1ULL;
-            int max_allowed_A = 63;
+            int max_allowed_A = 63 - essential_A_mask;
 
-            // 如果覺得一次 +1 (門檻變2倍) 不夠，可以改為 +2 (門檻瞬間變4倍)
             if (A[i] + 1 <= max_allowed_A) {
                 A[i]++;
             } else {
