@@ -4,17 +4,15 @@
 #include <cmath>    // 提供 std::abs, std::max
 #include <cstdint>  // 提供 uint64_t 等定寬整數型別
 #include <cstring>  // 提供 std::memcpy, std::memset
-#include <iostream>
-#include <vector>
 
 CorticalColumn::CorticalColumn(int potential_E_rate, int potential_I_rate, int leak_speed, int essential_A_mask,
-                               int P_of_growth, int P_of_death) {
+                               int P_of_growth, int P_of_death, int T_of_leak) {
     // C++ 原生陣列初始化，將膜電位底線設為 1 (最低位階)
     std::random_device rd;
     rng.seed(rd());
     for (int i = 0; i < NUM_NEURONS; i++) {
         V[i] = 1ULL;
-        A[i] = 0;
+        A[i] = essential_A_mask;
     }
 
     this->potential_E_rate = potential_E_rate;
@@ -23,6 +21,7 @@ CorticalColumn::CorticalColumn(int potential_E_rate, int potential_I_rate, int l
     this->essential_A_mask = essential_A_mask;
     this->P_of_growth = P_of_growth;
     this->P_of_death = P_of_death;
+    this->T_of_leak = T_of_leak;
 
     initialize_bucket_topology();
 
@@ -110,7 +109,7 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
     }
 
     // 2. 隱藏層與輸出層運算 (ID 256 ~ 1023)
-    for (int i = 256; i < NUM_NEURONS; i++) {
+    for (int i = 0; i < NUM_NEURONS; i++) {
         int excitatory_count = 0;
         int inhibitory_count = 0;
 
@@ -146,13 +145,13 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
         }
 
         // 脈衝觸發判定
-        uint64_t threshold_mask = 1ULL << (essential_A_mask + A[i]);
+        uint64_t threshold_mask = 1ULL << (A[i]);
 
         if ((V[i] & ~(threshold_mask - 1)) != 0) {
             // 發射 Spike
             spikes_next[i / NEURONS_PER_BUCKET] |= (1ULL << (i % NEURONS_PER_BUCKET));
             V[i] = 1ULL;
-            int max_allowed_A = 63 - essential_A_mask;
+            int max_allowed_A = 63;
 
             // 如果覺得一次 +1 (門檻變2倍) 不夠，可以改為 +2 (門檻瞬間變4倍)
             if (A[i] + 1 <= max_allowed_A) {
@@ -193,7 +192,7 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
                 }
             }
         } else {
-            if ((global_tick_counter & 63) == 0) {
+            if (((global_tick_counter + i) & T_of_leak) == 0) {
                 if (A[i] > 0) {
                     A[i]--;
                 }

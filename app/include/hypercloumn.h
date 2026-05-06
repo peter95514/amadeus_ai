@@ -20,7 +20,7 @@ private:
 
     // === 膜電位與動態閾值 (SoA 佈局，極致記憶體連續性) ===
     uint64_t V[NUM_NEURONS];
-    uint64_t A[NUM_NEURONS];
+    int A[NUM_NEURONS];
 
     // === 活化遮罩 (Runtime 真正連通的突觸，會隨學習改變) ===
     uint64_t active_E_mask[MASKS_SIZE] = {0};
@@ -38,10 +38,11 @@ private:
     int essential_A_mask;
     int P_of_growth;
     int P_of_death;
+    int T_of_leak;
 
 public:
-    CorticalColumn(int potential_E_rate = 5, int potential_I_rate = 4, int leak_speed = 4, int essential_A_mask = 20,
-                   int P_of_growth = 5, int P_of_death = 2);
+    CorticalColumn(int potential_E_rate = 10, int potential_I_rate = 6, int leak_speed = 1, int essential_A_mask = 10,
+                   int P_of_growth = 5, int P_of_death = 2, int T_of_leak = 32);
 
 private:
     // 將 16 個桶子排成 4x4 的 2D 拓撲
