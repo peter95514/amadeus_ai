@@ -6,15 +6,7 @@
 #include <cstring>  // 提供 std::memcpy, std::memset
 
 CorticalColumn::CorticalColumn(int potential_E_rate, int potential_I_rate, int leak_speed, int essential_A_mask,
-                               int P_of_growth, int P_of_death, int T_of_leak) {
-    // C++ 原生陣列初始化，將膜電位底線設為 1 (最低位階)
-    std::random_device rd;
-    rng.seed(rd());
-    for (int i = 0; i < NUM_NEURONS; i++) {
-        V[i] = 1ULL;
-        A[i] = essential_A_mask;
-    }
-
+                               int P_of_growth, int P_of_death, int T_of_leak, int one_time_of_V) {
     this->potential_E_rate = potential_E_rate;
     this->potential_I_rate = potential_I_rate;
     this->leak_speed = leak_speed;
@@ -22,6 +14,15 @@ CorticalColumn::CorticalColumn(int potential_E_rate, int potential_I_rate, int l
     this->P_of_growth = P_of_growth;
     this->P_of_death = P_of_death;
     this->T_of_leak = T_of_leak;
+    this->one_time_of_V = one_time_of_V;
+
+    // C++ 原生陣列初始化，將膜電位底線設為 1 (最低位階)
+    std::random_device rd;
+    rng.seed(rd());
+    for (int i = 0; i < NUM_NEURONS; i++) {
+        V[i] = 1ULL;
+        A[i] = essential_A_mask;
+    }
 
     initialize_bucket_topology();
 
@@ -116,7 +117,7 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
     for (int i = 0; i < NUM_NEURONS; i++) {
         int excitatory_count = 0;
         int inhibitory_count = 0;
-
+#pragma GCC unroll 16
         for (int b = 0; b < NUM_BUCKETS; b++) {
             int block_idx = (i * NUM_BUCKETS) + b;
             excitatory_count += POPCOUNT64(spikes_current[b] & active_E_mask[block_idx]);
@@ -126,24 +127,22 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
             // 這樣代表：每 4 個興奮輸入，才產生 1 階電位上升
             // 每 2 個抑制輸入，才產生 1 階電位下降 (保留了抑制性大於興奮性的 2 倍比例，但力度溫和)
             int net_shift = excitatory_count - inhibitory_count;
-
             // 2. 位移限幅 (Shift Clamping) ★ 關鍵防護 ★
             // 限制單次 Tick 的最大電位變動率，防止瞬間暴走或瞬間失憶
             // 這裡將單步最大位移限制在 [-3, +3] 之間 (即單步最多放大/縮小 8 倍)
-            net_shift = std::clamp(net_shift, -3, 3);
+            net_shift = std::clamp(net_shift, -one_time_of_V, one_time_of_V);
 
-            // 接下來接回你原本修復過的防溢位運算
             if (net_shift > 0) {
-            // ★ 優化 3：用直接比較取代 clzll，降低複雜度
-            uint64_t overflow_threshold = 1ULL << (63 - net_shift);
-            if (V[i] >= overflow_threshold) {
-                V[i] = 1ULL << 63;
-            } else {
-                V[i] <<= net_shift;
-            }
+                uint64_t overflow_threshold = 1ULL << (63 - net_shift);
+                if (V[i] >= overflow_threshold) {
+                    V[i] = 1ULL << 63;
+                } else {
+                    V[i] <<= net_shift;
+                }
             } else if (net_shift < 0) {
-                int down_shift = -net_shift;
-                V[i] = std::max(1ULL, (unsigned long long)V[i] >> down_shift);
+                /*int down_shift = -net_shift;
+                V[i] = std::max(1ULL, (unsigned long long)V[i] >> down_shift);*/
+                V[i] = 1ULL;
             } else {
                 V[i] = (V[i] >> leak_speed) | 1ULL;  // Leak
             }
@@ -156,7 +155,6 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
             spikes_next[i / NEURONS_PER_BUCKET] |= (1ULL << (i % NEURONS_PER_BUCKET));
             V[i] = 1ULL;
             A[i] += (A[i] < max_allowed_A);
-
 
             // ==========================================
             // ★ 純位元結構可塑性 (Bitwise Structural Plasticity) ★

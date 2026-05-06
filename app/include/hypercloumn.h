@@ -15,20 +15,20 @@ class CorticalColumn {
 private:
     // === 動態狀態緩衝區 (16 * 64 = 1024 bits) ===
     // 初始化為 0
-    uint64_t spikes_current[NUM_BUCKETS] = {0};
-    uint64_t spikes_next[NUM_BUCKETS] = {0};
+    alignas(64) uint64_t spikes_current[NUM_BUCKETS] = {0};
+    alignas(64) uint64_t spikes_next[NUM_BUCKETS] = {0};
 
     // === 膜電位與動態閾值 (SoA 佈局，極致記憶體連續性) ===
-    uint64_t V[NUM_NEURONS];
+    alignas(64) uint64_t V[NUM_NEURONS];
     int A[NUM_NEURONS];
 
     // === 活化遮罩 (Runtime 真正連通的突觸，會隨學習改變) ===
-    uint64_t active_E_mask[MASKS_SIZE] = {0};
-    uint64_t active_I_mask[MASKS_SIZE] = {0};
+    alignas(64) uint64_t active_E_mask[MASKS_SIZE] = {0};
+    alignas(64) uint64_t active_I_mask[MASKS_SIZE] = {0};
 
     // === 潛在遮罩 (唯讀，定義了墨西哥帽與桶子的物理極限) ===
-    uint64_t potential_E_mask[MASKS_SIZE] = {0};
-    uint64_t potential_I_mask[MASKS_SIZE] = {0};
+    alignas(64) uint64_t potential_E_mask[MASKS_SIZE] = {0};
+    alignas(64) uint64_t potential_I_mask[MASKS_SIZE] = {0};
     std::mt19937 rng;
 
     int potential_E_rate;
@@ -39,13 +39,13 @@ private:
     int P_of_growth;
     int P_of_death;
     int T_of_leak;
+    int one_time_of_V;
 
     int max_allowed_A = 63 - essential_A_mask;
 
-
 public:
     CorticalColumn(int potential_E_rate = 10, int potential_I_rate = 6, int leak_speed = 1, int essential_A_mask = 10,
-                   int P_of_growth = 5, int P_of_death = 2, int T_of_leak = 32);
+                   int P_of_growth = 5, int P_of_death = 2, int T_of_leak = 32, int one_time_of_V = 3);
 
 private:
     // 將 16 個桶子排成 4x4 的 2D 拓撲
