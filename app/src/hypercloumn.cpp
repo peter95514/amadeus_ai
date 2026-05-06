@@ -188,7 +188,7 @@ Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learni
                 }
             }
         } else {
-            if (((global_tick_counter + i) & T_of_leak) == 0) {
+            if (((global_tick_counter) & T_of_leak) == 0) {
                 if (A[i] > 0) {
                     A[i]--;
                 }
