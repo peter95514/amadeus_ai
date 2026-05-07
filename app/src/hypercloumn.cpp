@@ -4,6 +4,7 @@
 #include <cmath>    // 提供 std::abs, std::max
 #include <cstdint>  // 提供 uint64_t 等定寬整數型別
 #include <cstring>  // 提供 std::memcpy, std::memset
+#include <iostream>
 
 #include "name.h"
 
@@ -27,7 +28,6 @@ CorticalColumn::CorticalColumn(int potential_E_rate, int potential_I_rate, int l
     }
 
     initialize_bucket_topology();
-
     initialize_random_connections(potential_E_rate, potential_I_rate);
 }
 
@@ -50,41 +50,24 @@ void CorticalColumn::initialize_random_connections(int e_rate, int i_rate) {
 
 void CorticalColumn::initialize_bucket_topology() {
     for (int i = 0; i < NUM_NEURONS; i++) {
-        // 計算目前神經元屬於哪個桶子，以及該桶子在 4x4 網格中的座標
         int my_bucket = i / NEURONS_PER_BUCKET;
-        int my_bx = my_bucket % 4;
-        int my_by = my_bucket / 4;
 
         for (int target_bucket = 0; target_bucket < NUM_BUCKETS; target_bucket++) {
-            int tx = target_bucket % 4;
-            int ty = target_bucket / 4;
-
-            // ==================================
-            // 可優化區間!!!!
-            // 將dist轉化成hash_table做查表
-            // ==================================
-
-            // 切比雪夫距離 (降維桶子計算)
-            int dist = std::max(std::abs(my_bx - tx), std::abs(my_by - ty));
-
-            // 遮罩陣列的起始索引
+            // 使用轉置後的索引
             int block_idx = (target_bucket * NUM_NEURONS) + i;
 
-            if (dist <= 1) {
-                // 距離 0 或 1：近側激發區
-                // ~0ULL 等同於 0xFFFFFFFFFFFFFFFF，直接開啟 64 條潛在連線
-                potential_E_mask[block_idx] = ~0ULL;
+            // ★ 直接查表，拿掉所有的座標除法、餘數與距離計算 ★
+            int type = TOPO_LUT.conn_type[my_bucket][target_bucket];
 
-                // 假設初始化時有 20% 的機率是天生連通的 (這裡簡化，實際可接入亂數)
-                // active_E_mask[block_idx] = generate_random_mask_20_percent();
-            } else if (dist == 2) {
-                // 距離 2：遠側抑制區
+            if (type == 1) {
+                potential_E_mask[block_idx] = ~0ULL;
+            } else if (type == 2) {
                 potential_I_mask[block_idx] = ~0ULL;
             }
         }
 
         // 防呆：把自己跟自己的潛在激發連線挖掉 (Bitwise AND NOT)
-        int self_block_idx = (i * NUM_BUCKETS) + my_bucket;
+        int self_block_idx = (my_bucket * NUM_NEURONS) + i;
         uint64_t self_bit = 1ULL << (i % NEURONS_PER_BUCKET);
         potential_E_mask[self_block_idx] &= ~self_bit;
     }
@@ -111,6 +94,90 @@ void CorticalColumn::try_grow_synapse(int target_neuron, int source_neuron) {
 // 傳入 256-bit 輸入封包，回傳 256-bit 輸出封包
 
 Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learning) {
+    // 1.輸入外部信號
+    for (int i = 0; i < 4; i++) {
+        spikes_current[i] = input_packet.blocks[i];
+    }
+
+    // 2.神經狀態更新
+
+    alignas(64) int E_spike[NUM_NEURONS] = {0};
+    alignas(64) int I_spike[NUM_NEURONS] = {0};
+
+    for (int b = 0; b < NUM_BUCKETS; b++) {
+        uint64_t spikes = spikes_current[b];
+
+        // 稀疏性優化：如果這個 Bucket 剛剛沒有任何人發射，直接跳過，省下 1024 次迴圈！
+        if (spikes == 0) continue;
+        int base_idx = b * NEURONS_PER_BUCKET;  // 鎖定這個 Bucket 的記憶體起點
+
+        // 告訴編譯器這裡沒有迴圈相依性，大膽使用 SIMD 向量化指令
+        for (int i = 0; i < NUM_NEURONS; i++) {
+            // 注意這裡的索引：base_idx + i 是一段連續的記憶體！
+            E_spike[i] += POPCOUNT64(spikes & active_E_mask[base_idx + i]);
+            I_spike[i] += POPCOUNT64(spikes & active_I_mask[base_idx + i]);
+            // std::cout << active_E_mask[base_idx + i] << std::endl;
+        }
+    }
+
+    for (int i = 0; i < NUM_NEURONS; i++) {
+        // 1. 結算淨位移 (限制在 -3 到 3 階之間)
+        int net_shift = std::clamp(E_spike[i] - I_spike[i], -max_level_of_V, max_level_of_V);
+
+        // 2. 更新膜電位 (純整數加減與位移)
+        if (net_shift >= 0) {
+            V[i] = std::min((int)V[i] + net_shift, max_level_of_V);  // 頂到 63 階為止
+        } else {
+            V[i] = std::max(0, (int)V[i] >> (-net_shift));  // 除法衰減，底線為 0
+        }
+
+        // 3. 脈衝觸發判定 (極簡的整數比較)
+        int current_threshold = essential_A_mask + A[i];
+
+        if (V[i] >= current_threshold) {
+            // 發射 Spike
+            spikes_next[i / NEURONS_PER_BUCKET] |= (1ULL << (i % NEURONS_PER_BUCKET));
+
+            // 觸發後重置電位 (整數 0 即為底線)
+            V[i] = 0;
+
+            // 增加疲勞值 (無分支寫法)
+            A[i] += (A[i] < max_allowed_A);
+
+            // ==========================================
+            // ★ 純位元結構可塑性 (配合轉置索引修正)
+            // ==========================================
+            if (enable_learning) {
+                for (int b = 0; b < NUM_BUCKETS; b++) {
+                    // 🚨 這裡的 block_idx 必須同步改成轉置寫法！
+                    int block_idx = (b * NUM_NEURONS) + i;
+
+                    // 尋找「剛剛發射了，在潛在允許範圍內，但尚未連線」的神經元
+                    uint64_t candidates = spikes_current[b] & potential_E_mask[block_idx] & ~active_E_mask[block_idx];
+
+                    if (candidates != 0) {
+                        uint64_t growth_mask = generate_random_mask(P_of_growth);
+                        active_E_mask[block_idx] |= (candidates & growth_mask);
+                    }
+
+                    // 尋找「沒有貢獻，卻佔用連線」的神經元
+                    uint64_t freeloaders = ~spikes_current[b] & active_E_mask[block_idx];
+
+                    if (freeloaders != 0) {
+                        uint64_t death_mask = generate_random_mask(P_of_death);
+                        active_E_mask[block_idx] &= ~(freeloaders & death_mask);
+                    }
+                }
+            }
+        } else {
+            // 未觸發時的自然漏電與疲勞恢復
+            if (((global_tick_counter + i) & T_of_leak) == 0) {
+                A[i] -= (A[i] > 0);
+                V[i] = std::max(0, (int)V[i] >> leak_speed);  // 自然漏電
+            }
+        }
+    }
+
     // 3. 封裝輸出層 (Bucket 12 ~ 15)
     Packet256 output_packet;
     for (int b = 0; b < 4; b++) {

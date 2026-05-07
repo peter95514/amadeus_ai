@@ -12,15 +12,47 @@
 #define POPCOUNT64(x) __builtin_popcountll(x)
 #endif
 
+struct TopologyTable {
+    // 0: 無連線, 1: 激發區 (dist <= 1), 2: 抑制區 (dist == 2)
+    int conn_type[16][16];
+
+    constexpr TopologyTable() : conn_type{} {
+        for (int b1 = 0; b1 < 16; b1++) {
+            for (int b2 = 0; b2 < 16; b2++) {
+                int x1 = b1 % 4, y1 = b1 / 4;
+                int x2 = b2 % 4, y2 = b2 / 4;
+
+                // 絕對值相減
+                int dx = (x1 > x2) ? x1 - x2 : x2 - x1;
+                int dy = (y1 > y2) ? y1 - y2 : y2 - y1;
+
+                // 切比雪夫距離
+                int dist = (dx > dy) ? dx : dy;
+
+                if (dist <= 1) {
+                    conn_type[b1][b2] = 1;
+                } else if (dist == 2) {
+                    conn_type[b1][b2] = 2;
+                } else {
+                    conn_type[b1][b2] = 0;
+                }
+            }
+        }
+    }
+};
+
+// 實例化這個常數表
+constexpr TopologyTable TOPO_LUT;
+
 class CorticalColumn {
 private:
     // === 動態狀態緩衝區 (16 * 64 = 1024 bits) ===
     // 初始化為 0
-    alignas(64) int8_t spikes_current[NUM_BUCKETS] = {0};
-    alignas(64) int8_t spikes_next[NUM_BUCKETS] = {0};
+    alignas(64) uint64_t spikes_current[NUM_BUCKETS] = {0};
+    alignas(64) uint64_t spikes_next[NUM_BUCKETS] = {0};
 
     // === 膜電位與動態閾值 (SoA 佈局，極致記憶體連續性) ===
-    alignas(64) uint64_t V[NUM_NEURONS];
+    alignas(64) uint8_t V[NUM_NEURONS];
     int A[NUM_NEURONS];
 
     // === 活化遮罩 (Runtime 真正連通的突觸，會隨學習改變) ===
@@ -42,11 +74,13 @@ private:
     int T_of_leak;
     int one_time_of_V;
 
+    int max_level_of_V = 64;
+
     const int max_allowed_A = 63 - essential_A_mask;
 
 public:
-    CorticalColumn(int potential_E_rate = 10, int potential_I_rate = 6, int leak_speed = 1, int essential_A_mask = 10,
-                   int P_of_growth = 5, int P_of_death = 2, int T_of_leak = 32, int one_time_of_V = 3);
+    CorticalColumn(int potential_E_rate = 10, int potential_I_rate = 2, int leak_speed = 9, int essential_A_mask = 11,
+                   int P_of_growth = 5, int P_of_death = 2, int T_of_leak = 72, int one_time_of_V = 5);
 
 private:
     // 將 16 個桶子排成 4x4 的 2D 拓撲
