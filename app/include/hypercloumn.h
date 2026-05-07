@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstdint>
 #include <random>
 
 #include "name.h"
@@ -15,8 +16,8 @@ class CorticalColumn {
 private:
     // === 動態狀態緩衝區 (16 * 64 = 1024 bits) ===
     // 初始化為 0
-    alignas(64) uint64_t spikes_current[NUM_BUCKETS] = {0};
-    alignas(64) uint64_t spikes_next[NUM_BUCKETS] = {0};
+    alignas(64) int8_t spikes_current[NUM_BUCKETS] = {0};
+    alignas(64) int8_t spikes_next[NUM_BUCKETS] = {0};
 
     // === 膜電位與動態閾值 (SoA 佈局，極致記憶體連續性) ===
     alignas(64) uint64_t V[NUM_NEURONS];
@@ -41,7 +42,7 @@ private:
     int T_of_leak;
     int one_time_of_V;
 
-    int max_allowed_A = 63 - essential_A_mask;
+    const int max_allowed_A = 63 - essential_A_mask;
 
 public:
     CorticalColumn(int potential_E_rate = 10, int potential_I_rate = 6, int leak_speed = 1, int essential_A_mask = 10,

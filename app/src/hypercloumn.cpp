@@ -5,6 +5,8 @@
 #include <cstdint>  // 提供 uint64_t 等定寬整數型別
 #include <cstring>  // 提供 std::memcpy, std::memset
 
+#include "name.h"
+
 CorticalColumn::CorticalColumn(int potential_E_rate, int potential_I_rate, int leak_speed, int essential_A_mask,
                                int P_of_growth, int P_of_death, int T_of_leak, int one_time_of_V) {
     this->potential_E_rate = potential_E_rate;
@@ -20,7 +22,7 @@ CorticalColumn::CorticalColumn(int potential_E_rate, int potential_I_rate, int l
     std::random_device rd;
     rng.seed(rd());
     for (int i = 0; i < NUM_NEURONS; i++) {
-        V[i] = 1ULL;
+        V[i] = 0;
         A[i] = essential_A_mask;
     }
 
@@ -66,7 +68,7 @@ void CorticalColumn::initialize_bucket_topology() {
             int dist = std::max(std::abs(my_bx - tx), std::abs(my_by - ty));
 
             // 遮罩陣列的起始索引
-            int block_idx = (i * NUM_BUCKETS) + target_bucket;
+            int block_idx = (target_bucket * NUM_NEURONS) + i;
 
             if (dist <= 1) {
                 // 距離 0 或 1：近側激發區
@@ -109,93 +111,6 @@ void CorticalColumn::try_grow_synapse(int target_neuron, int source_neuron) {
 // 傳入 256-bit 輸入封包，回傳 256-bit 輸出封包
 
 Packet256 CorticalColumn::tick(const Packet256& input_packet, bool enable_learning) {
-    // 1. 寫入輸入層 (Bucket 0 ~ 3)
-    for (int b = 0; b < 4; b++) {
-        spikes_current[b] = input_packet.blocks[b];
-    }
-
-    for (int i = 0; i < NUM_NEURONS; i++) {
-        int excitatory_count = 0;
-        int inhibitory_count = 0;
-#pragma GCC unroll 16
-        for (int b = 0; b < NUM_BUCKETS; b++) {
-            int block_idx = (i * NUM_BUCKETS) + b;
-            excitatory_count += POPCOUNT64(spikes_current[b] & active_E_mask[block_idx]);
-            inhibitory_count += POPCOUNT64(spikes_current[b] & active_I_mask[block_idx]);
-            // 1. 突觸降維 (Synaptic Downscaling)
-            // 使用位元右移 (等同於除以 4 和 2)，編譯器會優化成極速指令
-            // 這樣代表：每 4 個興奮輸入，才產生 1 階電位上升
-            // 每 2 個抑制輸入，才產生 1 階電位下降 (保留了抑制性大於興奮性的 2 倍比例，但力度溫和)
-            int net_shift = excitatory_count - inhibitory_count;
-            // 2. 位移限幅 (Shift Clamping) ★ 關鍵防護 ★
-            // 限制單次 Tick 的最大電位變動率，防止瞬間暴走或瞬間失憶
-            // 這裡將單步最大位移限制在 [-3, +3] 之間 (即單步最多放大/縮小 8 倍)
-            net_shift = std::clamp(net_shift, -one_time_of_V, one_time_of_V);
-
-            if (net_shift > 0) {
-                uint64_t overflow_threshold = 1ULL << (63 - net_shift);
-                if (V[i] >= overflow_threshold) {
-                    V[i] = 1ULL << 63;
-                } else {
-                    V[i] <<= net_shift;
-                }
-            } else if (net_shift < 0) {
-                /*int down_shift = -net_shift;
-                V[i] = std::max(1ULL, (unsigned long long)V[i] >> down_shift);*/
-                V[i] = 1ULL;
-            } else {
-                V[i] = (V[i] >> leak_speed) | 1ULL;  // Leak
-            }
-        }
-
-        // 脈衝觸發判定
-        uint64_t threshold_mask = 1ULL << (essential_A_mask + A[i]);
-        if (V[i] >= threshold_mask) {
-            // 發射 Spike
-            spikes_next[i / NEURONS_PER_BUCKET] |= (1ULL << (i % NEURONS_PER_BUCKET));
-            V[i] = 1ULL;
-            A[i] += (A[i] < max_allowed_A);
-
-            // ==========================================
-            // ★ 純位元結構可塑性 (Bitwise Structural Plasticity) ★
-            // 只有當這個神經元發射了，且開啟學習模式時才進行生長
-            // ==========================================
-            if (enable_learning) {
-                for (int b = 0; b < NUM_BUCKETS; b++) {
-                    int block_idx = (i * NUM_BUCKETS) + b;
-
-                    // 尋找「剛剛發射了，在潛在允許範圍內，但尚未連線」的神經元
-                    uint64_t candidates = spikes_current[b] & potential_E_mask[block_idx] & ~active_E_mask[block_idx];
-
-                    // 如果有候選者，我們給予它 5% 的極低機率長出連線 (避免突觸暴增)
-                    if (candidates != 0) {
-                        uint64_t growth_mask = generate_random_mask(P_of_growth);
-                        active_E_mask[block_idx] |= (candidates & growth_mask);
-                    }
-                    // ----------------------------------------------------
-                    // 2. 突觸凋零 (LTD / 剪枝) : "沒有貢獻，就被淘汰"
-                    // 條件：來源剛剛【沒有】發射 + 但目前【有連線】
-                    // ----------------------------------------------------
-                    uint64_t freeloaders = ~spikes_current[b] & active_E_mask[block_idx];
-
-                    if (freeloaders != 0) {
-                        // 1% 的機率將這條無用的突觸剪斷 (死亡)
-                        // 這裡機率必須比生長(5%)低，否則網路會太快斷光光
-                        uint64_t death_mask = generate_random_mask(P_of_death);
-                        // 將抽中死亡的 bit 挖掉 (Bitwise AND NOT)
-                        active_E_mask[block_idx] &= ~(freeloaders & death_mask);
-                    }
-                }
-            }
-        } else {
-            if (((global_tick_counter) & T_of_leak) == 0) {
-                if (A[i] > 0) {
-                    A[i]--;
-                }
-            }
-        }
-    }
-
     // 3. 封裝輸出層 (Bucket 12 ~ 15)
     Packet256 output_packet;
     for (int b = 0; b < 4; b++) {
