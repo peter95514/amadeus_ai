@@ -23,3 +23,6 @@ Thumbs.db
 
 # Local environment variables (sensitive info)
 .env
+
+# 匹配專案中任何位置的 .cache/clangd 資料夾
+**/.cache/
