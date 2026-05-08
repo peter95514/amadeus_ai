@@ -71,7 +71,7 @@ void run_for_no_learning(int k = 0) {
 
     for (int trial = 0; trial < NUM_TRIALS; trial++) {
         // 1. 產生一個全新的皮層柱 (包含隨機初始化的連線與遮罩)
-        CorticalColumn col_A(10, 2, 7, 10, 9, 2, 72, 10);
+        CorticalColumn col_A(10, 2, 7, 10, 9, 2, 72, k);
 
         // 2. 複製出一個一模一樣的雙胞胎 (權重、初始狀態完全相同)
         CorticalColumn col_B = col_A;
