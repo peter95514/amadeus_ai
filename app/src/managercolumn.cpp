@@ -51,9 +51,9 @@ Packet256 generate_noisy_packet(const Packet256& original, int num_noise_bits, s
     return noisy;
 }
 
-void run_for_no_learning(int k = 0) {
+void run_for_no_learning(int a, int b, int c, int d, int e, int f, int g, int h) {
     const int NUM_TRIALS = 1000;  // 跑 1000 次
-    const int NUM_TICKS = 2048;   // 每次觀察 100 個時間步長
+    const int NUM_TICKS = 1600;   // 每次觀察 100 個時間步長
     const int NOISE_BITS = 2;     // 設定 A' 只有 2 個 bit 的雜訊微小差異
 
     // 用一個 vector 來儲存每個 tick 的「距離總和」
@@ -71,7 +71,7 @@ void run_for_no_learning(int k = 0) {
 
     for (int trial = 0; trial < NUM_TRIALS; trial++) {
         // 1. 產生一個全新的皮層柱 (包含隨機初始化的連線與遮罩)
-        CorticalColumn col_A(10, 2, 7, 10, 9, 2, 72, k);
+        CorticalColumn col_A(a, b, c, d, e, f, g, h);
 
         // 2. 複製出一個一模一樣的雙胞胎 (權重、初始狀態完全相同)
         CorticalColumn col_B = col_A;
@@ -190,10 +190,18 @@ void run_for_no_learning(int k = 0) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
+    if (argc < 9) {
         std::cerr << "請提供一個數字參數！" << std::endl;
         return 1;
     }
-    int k = std::stoi(argv[1]);
-    run_for_no_learning(k);
+    int a = std::stoi(argv[1]);
+    int b = std::stoi(argv[2]);
+    int c = std::stoi(argv[3]);
+    int d = std::stoi(argv[4]);
+    int e = std::stoi(argv[5]);
+    int f = std::stoi(argv[6]);
+    int g = std::stoi(argv[7]);
+    int h = std::stoi(argv[8]);
+    g *= 16;
+    run_for_no_learning(a, b, c, d, e, f, g, h);
 };
